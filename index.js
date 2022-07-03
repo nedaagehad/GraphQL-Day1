@@ -1,54 +1,81 @@
-const { ApolloServer, gql } = require('apollo-server');
+const { ApolloServer, gql } = require("apollo-server");
 
-// A schema is a collection of type definitions (hence "typeDefs")
-// that together define the "shape" of queries that are executed against
-// your data.
 const typeDefs = gql`
-  # Comments in GraphQL strings (such as this one) start with the hash (#) symbol.
-
-  # This "Book" type defines the queryable fields for every book in our data source.
-  type Book {
+  type Post {
+    id: ID!
     title: String
     author: String
   }
 
-  # The "Query" type is special: it lists all of the available queries that
-  # clients can execute, along with the return type for each. In this
-  # case, the "books" query returns an array of zero or more Books (defined above).
   type Query {
-    books: [Book]
+    posts: [Post]
+  }
+
+  type Mutation {
+    create_Post(id: ID!, title: String, author: String): [Post]
+    update_Post(id: ID!, title: String, author: String): [Post]
+    delete_Post(id: ID!): [Post]
   }
 `;
 
-const books = [
-    {
-      title: 'The Awakening',
-      author: 'Kate Chopin',
-    },
-    {
-      title: 'City of Glass',
-      author: 'Paul Auster',
-    },
-  ];
+let posts = [
+  {
+    id: 1,
+    title: "The Awakening",
+    author: "Kate Chopin",
+  },
+  {
+    id: 2,
+    title: "City of Glass",
+    author: "Paul Auster",
+  },
+  {
+    id: 3,
+    title: "Animal Farm",
+    author: "George Orwell",
+  },
+];
 
-  // Resolvers define the technique for fetching the types defined in the
-// schema. This resolver retrieves books from the "books" array above.
 const resolvers = {
-    Query: {
-      books: () => books,
-    },
-  };
+  Query: {
+    posts: () => posts,
+  },
 
-  // The ApolloServer constructor requires two parameters: your schema
-// definition and your set of resolvers.
+  Mutation: {
+    create_Post: (_, { id, title, author }) => {
+      let newPost = { id, title, author };
+      posts.push(newPost);
+      return posts;
+    },
+
+    update_Post: (_, { id, title, author }) => {
+      let editPost = posts.map((Post) => {
+        if (Post.id == id) {
+          Post.title = title;
+          Post.author = author;
+        }
+
+        return Post;
+      });
+
+      return editPost;
+    },
+
+    delete_Post: (_, { id }) => {
+      posts = posts.filter((post) => post.id != id);
+      return posts;
+    },
+  },
+};
+
 const server = new ApolloServer({
-    typeDefs,
-    resolvers,
-    csrfPrevention: true,
-    cache: 'bounded',
-  });
-  
-  // The `listen` method launches a web server.
-  server.listen().then(({ url }) => {
-    console.log(`🚀  Server ready at ${url}`);
-  });
+  typeDefs,
+  resolvers,
+  csrfPrevention: true,
+  cache: "bounded",
+});
+
+// The `listen` method launches a web server.
+server.listen().then(({ url }) => {
+  console.log(`🚀  Server ready at ${url}`);
+});
